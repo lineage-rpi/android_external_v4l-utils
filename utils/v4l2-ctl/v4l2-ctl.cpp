@@ -1556,7 +1556,7 @@ int main(int argc, char **argv)
 		struct v4l2_event ev;
 
 		epollfd = epoll_create1(0);
-		epoll_ev.events = EPOLLPRI;
+		epoll_ev.events = 0x00000002;
 		epoll_ev.data.fd = fd;
 
 		memset(&sub, 0, sizeof(sub));

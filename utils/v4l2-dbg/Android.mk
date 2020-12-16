@@ -8,10 +8,7 @@ LOCAL_MODULE_TAGS := optional
 LOCAL_C_INCLUDES := \
     $(LOCAL_PATH)/../.. \
     $(LOCAL_PATH)/../../include \
-    bionic \
-    external/stlport/stlport
-
-LOCAL_SHARED_LIBRARIES := libstlport
+    bionic
 
 LOCAL_SRC_FILES := v4l2-dbg.cpp
 

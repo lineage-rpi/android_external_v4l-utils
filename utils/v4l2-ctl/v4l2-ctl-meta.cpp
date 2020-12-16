@@ -14,6 +14,7 @@
 #include <dirent.h>
 #include <math.h>
 #include <cstdlib>
+#include <endian.h>
 
 #include "v4l2-ctl.h"
 

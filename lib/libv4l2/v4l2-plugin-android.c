@@ -87,7 +87,7 @@ void v4l2_plugin_init(int fd, void **plugin_lib_ret, void **plugin_priv_ret,
 			continue;
 		}
 
-		while (entry = readdir(plugin_dir)) {
+		while ((entry = readdir(plugin_dir))) {
 			/* get last 3 letter suffix from the filename */
 			length = strlen(entry->d_name);
 			if (length > 3)

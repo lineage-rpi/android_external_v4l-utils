@@ -10,12 +10,14 @@ LOCAL_SRC_FILES := \
 
 LOCAL_CFLAGS += -Wno-missing-field-initializers
 LOCAL_CFLAGS += -Wno-sign-compare
+LOCAL_CFLAGS += -Wno-unused-parameter
+LOCAL_CFLAGS += -DHAVE_V4L_PLUGINS
 
 LOCAL_C_INCLUDES := \
     $(LOCAL_PATH)/../include \
     $(LOCAL_PATH)/../../include \
     $(LOCAL_PATH)/../.. \
-	$(TOP)/bionic/libc/upstream-openbsd/lib/libc/gen
+    $(TOP)/bionic/libc/upstream-openbsd/lib/libc/gen
 
 LOCAL_SHARED_LIBRARIES := \
     libutils \
