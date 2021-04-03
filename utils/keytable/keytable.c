@@ -12,7 +12,11 @@
    GNU General Public License for more details.
  */
 
+#ifdef ANDROID
+#include <android-config.h>
+#else
 #include <config.h>
+#endif
 #include <ctype.h>
 #include <errno.h>
 #include <fcntl.h>
@@ -28,7 +32,7 @@
 #include <sys/resource.h>
 #include <sys/stat.h>
 #include <dirent.h>
-#include <argp.h>
+#include <getopt.h>
 #include <time.h>
 #include <stdbool.h>
 
@@ -240,7 +244,7 @@ static int parse_code(const char *string)
 const char *argp_program_version = "IR keytable control version " V4L_UTILS_VERSION;
 const char *argp_program_bug_address = "Mauro Carvalho Chehab <mchehab@kernel.org>";
 
-static const char doc[] = N_(
+static const char doc[] = {
 	"\nLists Remote Controller devices, loads rc keymaps, tests events, and adjusts\n"
 	"other Remote Controller options. Rather than loading a rc keymap, it is also\n"
 	"possible to set protocol decoders and set rc scancode to keycode mappings\n"
@@ -259,29 +263,45 @@ static const char doc[] = N_(
 	"  PARAMETER - a set of name1=number1[,name2=number2]... for the BPF prototcol\n"
 	"  CFGFILE   - configuration file that associates a driver/table name with\n"
 	"              a keymap file\n"
-	"\nOptions can be combined together.");
-
-static const struct argp_option options[] = {
-	{"verbose",	'v',	0,		0,	N_("enables debug messages"), 0},
-	{"clear",	'c',	0,		0,	N_("Clears the scancode to keycode mappings"), 0},
-	{"sysdev",	's',	N_("SYSDEV"),	0,	N_("rc device to control, defaults to rc0 if not specified"), 0},
-	{"test",	't',	0,		0,	N_("test if IR is generating events"), 0},
-	{"read",	'r',	0,		0,	N_("reads the current scancode/keycode mapping"), 0},
-	{"write",	'w',	N_("KEYMAP"),	0,	N_("write (adds) the keymap from the specified file"), 0},
-	{"set-key",	'k',	N_("SCANKEY"),	0,	N_("Change scan/key pairs"), 0},
-	{"protocol",	'p',	N_("PROTOCOL"),	0,	N_("Protocol to enable (the other ones will be disabled). To enable more than one, use the option more than one time"), 0},
-	{"parameter",	'e',	N_("PARAMETER"), 0,	N_("Set a parameter for the protocol decoder")},
-	{"delay",	'D',	N_("DELAY"),	0,	N_("Sets the delay before repeating a keystroke"), 0},
-	{"period",	'P',	N_("PERIOD"),	0,	N_("Sets the period to repeat a keystroke"), 0},
-	{"auto-load",	'a',	N_("CFGFILE"),	0,	N_("Auto-load keymaps, based on a configuration file. Only works with --sysdev."), 0},
-	{"test-keymap",	1,	N_("KEYMAP"),	0,	N_("Test if keymap is valid"), 0},
-	{"help",        '?',	0,		0,	N_("Give this help list"), -1},
-	{"usage",	-3,	0,		0,	N_("Give a short usage message")},
-	{"version",	'V',	0,		0,	N_("Print program version"), -1},
-	{ 0, 0, 0, 0, 0, 0 }
+	"\nOptions can be combined together.\n\n"
+	"  -a, --auto-load=CFGFILE    Auto-load keymaps, based on a configuration file.\n"
+	"                             Only works with --sysdev.\n"
+	"  -c, --clear                Clears the scancode to keycode mappings\n"
+	"  -d, --device=SYSDEV        ir device to control\n"
+	"  -D, --delay=DELAY          Sets the delay before repeating a keystroke\n"
+	"  -e, --parameter=PARAMETER  Set a parameter for the protocol decoder\n"
+	"  -k, --set-key=SCANKEY      Change scan/key pairs\n"
+	"  -p, --protocol=PROTOCOL    Protocol to enable (the other ones will be disabled).\n"
+	"                             To enable more than one, use the option more than one time\n"
+	"  -P, --period=PERIOD        Sets the period to repeat a keystroke\n"
+	"  -r, --read                 reads the current scancode/keycode mapping\n"
+	"  -s, --sysdev=SYSDEV        rc device to control, defaults to rc0 if not specified\n"
+	"  -t, --test                 Test if IR is generating events\n"
+	"  -T, --test-keymap=KEYMAP   Test if keymap is valid\n"
+	"  -v, --verbose              Enables debug messages\n"
+	"  -w, --write=KEYMAP         Write (adds) the keymap from the specified file\n"
+	"  -?, --help                 Give this help list\n"
+	"  -V, --version              Print program version\n"
 };
 
-static const char args_doc[] = N_("");
+static const struct option long_options[] = {
+	{"verbose", no_argument, 0, 'v'},
+	{"clear", no_argument, 0, 'c'},
+	{"sysdev", required_argument, 0, 's'},
+	{"test", no_argument, 0, 't'},
+	{"read", no_argument, 0, 'r'},
+	{"write", required_argument, 0, 'w'},
+	{"set-key", required_argument, 0, 'k'},
+	{"protocol", required_argument, 0, 'p'},
+	{"parameter", required_argument, 0, 'e'},
+	{"delay", required_argument, 0, 'D'},
+	{"period", required_argument, 0, 'P'},
+	{"auto-load", required_argument, 0, 'a'},
+	{"test-keymap", required_argument, 0, 'T'},
+	{"help", no_argument, 0, '?'},
+	{"version", no_argument, 0, 'V'},
+	{ 0, 0, 0, 0 }
+};
 
 /* Static vars to store the parameters */
 static char *devclass = NULL;
@@ -525,207 +545,209 @@ err_einval:
 
 }
 
-static error_t parse_opt(int k, char *arg, struct argp_state *state)
+static error_t parse_opt(int argc, char* argv[])
 {
 	char *p;
 	long key;
 	int rc;
+	int c;
 
-	switch (k) {
-	case 'v':
-		debug++;
+	while (1) {
+		int option_index = 0;
+		c = getopt_long(argc, argv, "vtcD:P:s:rw:a:k:p:e:T:?V", long_options, &option_index);
+		if (c == -1)
 		break;
-	case 't':
-		test++;
-		break;
-	case 'c':
-		clear++;
-		break;
-	case 'D':
-		delay = strtol(arg, &p, 10);
-		if (!p || *p || delay < 0)
-			argp_error(state, _("Invalid delay: %s"), arg);
-		break;
-	case 'P':
-		period = strtol(arg, &p, 10);
-		if (!p || *p || period < 0)
-			argp_error(state, _("Invalid period: %s"), arg);
-		break;
-	case 's':
-		devclass = arg;
-		break;
-	case 'r':
-		readtable++;
-		break;
-	case 'w': {
-		struct keymap *map = NULL;
 
-		rc = parse_keymap(arg, &map, debug);
-		if (rc) {
-			argp_error(state, _("Failed to read table file %s"), arg);
-			break;
-		}
-		if (map->name)
-			fprintf(stderr, _("Read %s table\n"), map->name);
-
-		add_keymap(map, arg);
-		free_keymap(map);
-		break;
-	}
-	case 'a': {
-		rc = parse_cfgfile(arg);
-		if (rc)
-			argp_error(state, _("Failed to read config file %s"), arg);
-		break;
-	}
-	case 'k':
-		p = strtok(arg, ":=");
-		do {
-			struct keytable_entry *ke;
-
-			if (!p) {
-				argp_error(state, _("Missing scancode: %s"), arg);
+		switch (c) {
+			case 'v':
+				debug++;
 				break;
-			}
-
-			ke = calloc(1, sizeof(*ke));
-			if (!ke) {
-				perror(_("No memory!\n"));
-				return ENOMEM;
-			}
-
-			ke->scancode = strtoull(p, NULL, 0);
-			if (errno) {
-				free(ke);
-				argp_error(state, _("Invalid scancode: %s"), p);
+			case 't':
+				test++;
 				break;
-			}
-
-			p = strtok(NULL, ",;");
-			if (!p) {
-				free(ke);
-				argp_error(state, _("Missing keycode"));
+			case 'c':
+				clear++;
 				break;
-			}
+			case 'D':
+				delay = strtol(optarg, &p, 10);
+				if (!p || *p || delay < 0)
+					fprintf(stderr, _("Invalid delay: %s\n"), optarg);
+					goto err_inval;
+				break;
+			case 'P':
+				period = strtol(optarg, &p, 10);
+				if (!p || *p || period < 0)
+					fprintf(stderr, _("Invalid period: %s\n"), optarg);
+					goto err_inval;
+				break;
+			case 's':
+				devclass = optarg;
+				break;
+			case 'r':
+				readtable++;
+				break;
+			case 'w': {
+				struct keymap *map = NULL;
 
-			key = parse_code(p);
-			if (key == -1) {
-				key = strtol(p, NULL, 0);
-				if (errno) {
-					free(ke);
-					argp_error(state, _("Unknown keycode: %s"), p);
-					break;
+				rc = parse_keymap(optarg, &map, debug);
+				if (rc) {
+					fprintf(stderr, _("Failed to read table file %s\n"), optarg);
+					goto err_inval;
 				}
+				if (map->name)
+					fprintf(stderr, _("Read %s table\n"), map->name);
+
+				add_keymap(map, optarg);
+				free_keymap(map);
+				break;
 			}
-
-			ke->keycode = key;
-
-			if (debug)
-				fprintf(stderr, _("scancode 0x%04llx=%u\n"),
-					ke->scancode, ke->keycode);
-
-			ke->next = keytable;
-			keytable = ke;
-
-			p = strtok(NULL, ":=");
-		} while (p);
-		break;
-	case 'p':
-		for (p = strtok(arg, ",;"); p; p = strtok(NULL, ",;")) {
-			enum sysfs_protocols protocol;
-
-			protocol = parse_sysfs_protocol(p, true);
-			if (protocol == SYSFS_INVALID) {
-				struct bpf_protocol *b;
-
-				b = malloc(sizeof(*b));
-				b->name = strdup(p);
-				b->param = NULL;
-				b->next = bpf_protocol;
-				bpf_protocol = b;
+			case 'a': {
+				rc = parse_cfgfile(optarg);
+				if (rc)
+					fprintf(stderr, _("Failed to read config file %s\n"), optarg);
+					goto err_inval;
+				break;
 			}
-			else {
-				ch_proto |= protocol;
-			}
+			case 'k':
+				p = strtok(optarg, ":=");
+				do {
+					struct keytable_entry *ke;
+
+					if (!p) {
+						fprintf(stderr, _("Missing scancode: %s\n"), optarg);
+						goto err_inval;
+					}
+
+					ke = calloc(1, sizeof(*ke));
+					if (!ke) {
+						perror(_("No memory!\n"));
+						return ENOMEM;
+					}
+
+					ke->scancode = strtoull(p, NULL, 0);
+					if (errno) {
+						free(ke);
+						fprintf(stderr, _("Invalid scancode: %s\n"), p);
+						goto err_inval;
+					}
+
+					p = strtok(NULL, ",;");
+					if (!p) {
+						free(ke);
+						fprintf(stderr, _("Missing keycode\n"));
+						goto err_inval;
+					}
+
+					key = parse_code(p);
+					if (key == -1) {
+						key = strtol(p, NULL, 0);
+						if (errno) {
+							free(ke);
+							fprintf(stderr, _("Unknown keycode: %s\n"), p);
+							goto err_inval;
+						}
+					}
+
+					ke->keycode = key;
+
+					if (debug)
+						fprintf(stderr, _("scancode 0x%04llx=%u\n"),
+							ke->scancode, ke->keycode);
+
+					ke->next = keytable;
+					keytable = ke;
+
+					p = strtok(NULL, ":=");
+				} while (p);
+				break;
+			case 'p':
+				for (p = strtok(optarg, ",;"); p; p = strtok(NULL, ",;")) {
+					enum sysfs_protocols protocol;
+
+					protocol = parse_sysfs_protocol(p, true);
+					if (protocol == SYSFS_INVALID) {
+						struct bpf_protocol *b;
+
+						b = malloc(sizeof(*b));
+						b->name = strdup(p);
+						b->param = NULL;
+						b->next = bpf_protocol;
+						bpf_protocol = b;
+					}
+					else {
+						ch_proto |= protocol;
+					}
+				}
+				break;
+			case 'e':
+				p = strtok(optarg, ":=");
+				do {
+					struct protocol_param *param;
+
+					if (!p) {
+						fprintf(stderr, _("Missing parameter name: %s\n"), optarg);
+						goto err_inval;
+					}
+
+					param = malloc(sizeof(*param));
+					if (!p) {
+						perror(_("No memory!\n"));
+						return ENOMEM;
+					}
+
+					param->name = strdup(p);
+
+					p = strtok(NULL, ",;");
+					if (!p) {
+						free(param);
+						fprintf(stderr, _("Missing value\n"));
+						goto err_inval;
+					}
+
+					param->value = strtol(p, NULL, 0);
+					if (errno) {
+						free(param);
+						fprintf(stderr, _("Unknown keycode: %s\n"), p);
+						goto err_inval;
+					}
+
+					if (debug)
+						fprintf(stderr, _("parameter %s=%ld\n"),
+							param->name, param->value);
+
+					param->next = bpf_parameter;
+					bpf_parameter = param;
+
+					p = strtok(NULL, ":=");
+				} while (p);
+				break;
+			case 'T':
+				test_keymap++;
+				struct keymap *map ;
+
+				rc = parse_keymap(optarg, &map, debug);
+				if (rc)
+					fprintf(stderr, _("Failed to read table file %s\n"), optarg);
+					goto err_inval;
+				add_keymap(map, optarg);
+				free_keymap(map);
+				break;
+			case '?':
+				fprintf(stderr, doc);
+				fprintf(stderr, _("\nReport bugs to %s.\n"), argp_program_bug_address);
+				exit(0);
+			case 'V':
+				fprintf (stderr, _("%s\n"), argp_program_version);
+				exit(0);
+			default:
+				return E2BIG;
 		}
-		break;
-	case 'e':
-		p = strtok(arg, ":=");
-		do {
-			struct protocol_param *param;
-
-			if (!p) {
-				argp_error(state, _("Missing parameter name: %s"), arg);
-				break;
-			}
-
-			param = malloc(sizeof(*param));
-			if (!p) {
-				perror(_("No memory!\n"));
-				return ENOMEM;
-			}
-
-			param->name = strdup(p);
-
-			p = strtok(NULL, ",;");
-			if (!p) {
-				free(param);
-				argp_error(state, _("Missing value"));
-				break;
-			}
-
-			param->value = strtol(p, NULL, 0);
-			if (errno) {
-				free(param);
-				argp_error(state, _("Unknown keycode: %s"), p);
-				break;
-			}
-
-			if (debug)
-				fprintf(stderr, _("parameter %s=%ld\n"),
-					param->name, param->value);
-
-			param->next = bpf_parameter;
-			bpf_parameter = param;
-
-			p = strtok(NULL, ":=");
-		} while (p);
-		break;
-	case 1:
-		test_keymap++;
-		struct keymap *map ;
-
-		rc = parse_keymap(arg, &map, debug);
-		if (rc)
-			argp_error(state, _("Failed to read table file %s"), arg);
-		add_keymap(map, arg);
-		free_keymap(map);
-		break;
-	case '?':
-		argp_state_help(state, state->out_stream,
-				ARGP_HELP_SHORT_USAGE | ARGP_HELP_LONG
-				| ARGP_HELP_DOC);
-		fprintf(state->out_stream, _("\nReport bugs to %s.\n"), argp_program_bug_address);
-		exit(0);
-	case 'V':
-		fprintf (state->out_stream, "%s\n", argp_program_version);
-		exit(0);
-	case -3:
-		argp_state_help(state, state->out_stream, ARGP_HELP_USAGE);
-		exit(0);
-	default:
-		return ARGP_ERR_UNKNOWN;
 	}
-
 	return 0;
-}
 
-static struct argp argp = {
-	.options = options,
-	.parser = parse_opt,
-	.args_doc = args_doc,
-	.doc = doc,
-};
+err_inval:
+	return E2BIG;
+}
 
 static void prtcode(unsigned long long scancode, int keycode)
 {
@@ -2041,7 +2063,7 @@ int main(int argc, char *argv[])
 	textdomain (PACKAGE);
 #endif
 
-	argp_parse(&argp, argc, argv, ARGP_NO_HELP, 0, 0);
+	parse_opt(argc, argv);
 
 	if (test_keymap)
 		return 0;

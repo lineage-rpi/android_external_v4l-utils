@@ -2,6 +2,10 @@
 #ifndef __KEYMAP_H
 #define __KEYMAP_H
 
+#ifndef error_t
+typedef int error_t;
+#endif
+
 struct keymap {
 	struct keymap *next;
 	char *name;
