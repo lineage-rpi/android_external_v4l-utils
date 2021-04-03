@@ -1,6 +1,22 @@
-LOCAL_PATH:= $(call my-dir)
+LOCAL_PATH := $(call my-dir)
 
 include $(CLEAR_VARS)
+
+LOCAL_MODULE := libv4l_convert
+LOCAL_MODULE_TAGS := optional
+LOCAL_PROPRIETARY_MODULE := true
+
+LOCAL_CFLAGS := \
+    -Wno-missing-field-initializers \
+    -Wno-sign-compare \
+    -Wno-unused-function \
+    -Wno-unused-parameter \
+    -Wno-unused-variable
+
+LOCAL_C_INCLUDES := \
+    $(LOCAL_PATH)/../.. \
+    $(LOCAL_PATH)/../include \
+    $(LOCAL_PATH)/../../include
 
 LOCAL_SRC_FILES := \
     bayer.c \
@@ -28,29 +44,15 @@ LOCAL_SRC_FILES := \
     stv0680.c \
     tinyjpeg.c \
     control/libv4lcontrol.c \
-    processing/autogain.c  \
+    processing/autogain.c \
     processing/gamma.c \
-    processing/libv4lprocessing.c  \
-    processing/whitebalance.c \
-
-LOCAL_CFLAGS += -Wno-missing-field-initializers
-LOCAL_CFLAGS += -Wno-sign-compare
-LOCAL_CFLAGS += -Wno-unused-parameter
-LOCAL_CFLAGS += -Wno-unused-function
-LOCAL_CFLAGS += -Wno-unused-variable
-
-LOCAL_C_INCLUDES := \
-    $(LOCAL_PATH)/../include \
-    $(LOCAL_PATH)/../../include \
-    $(LOCAL_PATH)/../.. \
+    processing/libv4lprocessing.c \
+    processing/whitebalance.c
 
 LOCAL_SHARED_LIBRARIES := \
-    libutils \
     libcutils \
     libdl \
+    libutils \
     libz
-
-LOCAL_MODULE := libv4l_convert
-LOCAL_MODULE_TAGS := optional
 
 include $(BUILD_STATIC_LIBRARY)
