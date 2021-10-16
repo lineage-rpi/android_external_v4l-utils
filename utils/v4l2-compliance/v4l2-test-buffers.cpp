@@ -909,11 +909,11 @@ static int captureBufs(struct node *node, struct node *node_m2m_cap, const cv4l_
 
 		fail_on_test(epollfd < 0);
 		if (node->is_m2m)
-			ev.events = 0x00000001 | 0x00000004 | 0x00000002;
+			ev.events = EPOLLIN | EPOLLOUT | EPOLLPRI;
 		else if (v4l_type_is_output(q.g_type()))
-			ev.events = 0x00000004;
+			ev.events = EPOLLOUT;
 		else
-			ev.events = 0x00000001;
+			ev.events = EPOLLIN;
 		ev.data.fd = node->g_fd();
 		fail_on_test(epoll_ctl(epollfd, EPOLL_CTL_ADD, node->g_fd(), &ev));
 	}
@@ -952,8 +952,8 @@ static int captureBufs(struct node *node, struct node *node_m2m_cap, const cv4l_
 			ret = epoll_wait(epollfd, &ev, 1, 2000);
 			fail_on_test(ret == 0);
 			fail_on_test(ret < 0);
-			can_read = ev.events & 0x00000001;
-			have_event = ev.events & 0x00000002;
+			can_read = ev.events & EPOLLIN;
+			have_event = ev.events & EPOLLPRI;
 		}
 
 		if (have_event) {

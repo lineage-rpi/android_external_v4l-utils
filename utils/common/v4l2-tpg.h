@@ -22,7 +22,7 @@ typedef __s16 s16;
 typedef __u8 u8;
 typedef __s8 s8;
 
-# if !defined(__ANDROID__)
+#if !defined(__ANDROID__)
 #define __packed __attribute__((packed))
 #endif
 #define pr_info printf
