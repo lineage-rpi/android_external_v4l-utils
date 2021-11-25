@@ -788,7 +788,7 @@ static bool parse_next_subopt(char **subs, char **value)
 	static char *const subopts[] = {
 	    NULL
 	};
-	int opt = getsubopt(subs, subopts, value);
+	int opt = v4l_getsubopt(subs, subopts, value);
 
 	if (opt < 0 || *value)
 		return false;

@@ -42,6 +42,7 @@
 
 #include "v4l2-compliance.h"
 #include <media-info.h>
+#include <v4l-getsubopt.h>
 #ifndef ANDROID
 #include "version.h"
 #endif
@@ -810,7 +811,7 @@ static void streamingSetup(struct node *node)
 
 static int parse_subopt(char **subs, const char * const *subopts, char **value)
 {
-	int opt = getsubopt(subs, const_cast<char * const *>(subopts), value);
+	int opt = v4l_getsubopt(subs, const_cast<char * const *>(subopts), value);
 
 	if (opt == -1) {
 		fprintf(stderr, "Invalid suboptions specified\n");

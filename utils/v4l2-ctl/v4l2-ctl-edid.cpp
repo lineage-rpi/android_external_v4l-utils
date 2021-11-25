@@ -983,7 +983,7 @@ void edid_cmd(int ch, char *optarg)
 				NULL
 			};
 
-			int opt = getsubopt(&subs, (char* const*)subopts, &value);
+			int opt = v4l_getsubopt(&subs, (char* const*)subopts, &value);
 
 			if (opt == -1) {
 				fprintf(stderr, "Invalid suboptions specified\n");

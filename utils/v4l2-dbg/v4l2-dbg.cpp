@@ -42,6 +42,7 @@
 #endif
 
 #include <linux/videodev2.h>
+#include <v4l-getsubopt.h>
 
 #include <cstring>
 #include <list>
@@ -382,7 +383,7 @@ static int doioctl(int fd, unsigned long int request, void *parm, const char *na
 
 static int parse_subopt(char **subs, const char * const *subopts, char **value)
 {
-	int opt = getsubopt(subs, const_cast<char * const *>(subopts), value);
+	int opt = v4l_getsubopt(subs, const_cast<char * const *>(subopts), value);
 
 	if (opt == -1) {
 		fprintf(stderr, "Invalid suboptions specified\n");

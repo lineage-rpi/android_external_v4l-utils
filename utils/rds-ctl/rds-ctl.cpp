@@ -26,6 +26,7 @@
 
 #include <linux/videodev2.h>
 #include <libv4l2rds.h>
+#include <v4l-getsubopt.h>
 
 #include <cctype>
 #include <cmath>
@@ -375,7 +376,7 @@ static dev_vec list_devices()
 
 static int parse_subopt(char **subs, const char * const *subopts, char **value)
 {
-	int opt = getsubopt(subs, const_cast<char * const *>(subopts), value);
+	int opt = v4l_getsubopt(subs, const_cast<char * const *>(subopts), value);
 
 	if (opt == -1) {
 		fprintf(stderr, "Invalid suboptions specified\n");
